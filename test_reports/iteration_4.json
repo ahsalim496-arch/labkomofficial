@@ -1,0 +1,49 @@
+{
+  "summary": "Iteration 4 full test of LABKOM OFFICIAL Phase-4 features. Backend: 38/38 pytest passed (new /app/backend/tests/test_admin_gallery.py with 26 tests covering admin auth via ?key= and X-Admin-Key header on /api/admin/verify|registrations|contacts|stats, 401 on wrong/missing key, 401 on gallery POST/DELETE without key, listing shape + no _id leak + descending sort, date-range filter inclusive-today and exclusive past-window, stats counts matching /api/gallery, gallery create foto/video + public read + type filter + 422 validation + delete then 404 on re-delete; plus existing 12 regression tests for registrations/contacts/4 PDF materials). Frontend: /admin?key=wrong shows 'Akses Ditolak' + back-home-btn; valid key loads dashboard with stats cards (Pendaftaran 11/12, Pesan Kontak 5/6, Galeri 1), all 3 tabs switch, registration table headers Waktu/Nama/WhatsApp/Email/Kursus/Email Terkirim correct, date filter narrows list (11 -> 0 for 2020 window). Gallery CRUD from UI works (create 'Test Video' -> grid 1->2, success toast, form reset; delete via gallery-delete-{id} -> 2->1). /artikel/:slug and /tutorial/:slug render correct dynamic document.title, meta description, full content, related cards (2) with working navigation; share-content-button copies link with toast and zero console errors/webpack overlay; WhatsApp share link ok. Invalid slug shows 'Artikel Tidak Ditemukan' with working back-home link. /galeri title correct, filters semua/foto/video work, item modal opens and closes. nav-item-galeri and mobile-nav-galeri both navigate to /galeri. Testimonials: 6 cards (testimonial-1..6) with star ratings, avatars, names on Kursus tab. Regression: registration modal submit (record visible in admin), contact form (toast + reset, visible in admin contacts), all 4 PDF downloads, all 8 homepage nav tabs. Mobile 390x844: no horizontal overflow on /admin, /galeri, /artikel; admin table scrolls horizontally inside overflow-x-auto wrapper (scrollWidth 982 / clientWidth 356).",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "/api/admin/* (all)", "issue": "Admin key accepted as ?key= query param, so the secret is written into proxy/ingress access logs, browser history and Referer headers. Frontend already sends X-Admin-Key too - consider header-only for data endpoints."},
+      {"endpoint": "/api/admin/registrations, /api/admin/contacts", "issue": "Date filtering relies on lexicographic string comparison of ISO submitted_at; works today but breaks if any doc is ever stored as BSON date or with a different offset. Also no pagination (hard cap 1000/200 docs)."},
+      {"endpoint": "/api/registrations, /api/contacts", "issue": "No delete endpoint, so UI/API test rows (TEST_*) accumulate permanently in MongoDB and inflate admin stats."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "AdminDashboard - filter Reset button", "issue": "Reset clears the date inputs visually but the list stays filtered (stale-closure: setTimeout(loadAll,0) still uses the old dateFrom/dateTo from the previous render). Reproduced: full=11 rows -> filter 2020 window -> 0 rows -> click Reset -> still 0 rows; clicking 'Terapkan Filter' again restores 11. Fix by calling loadAll with explicit params or via useEffect on [dateFrom,dateTo].", "selector": "button:has-text('Reset') on /admin", "priority": "MEDIUM"},
+      {"component": "AdminDashboard - Reset button", "issue": "Reset control has no data-testid (only one without), making it untestable by testid.", "selector": "role=button name=Reset", "priority": "LOW"},
+      {"component": "AdminDashboard - gallery delete", "issue": "Delete button is opacity-0 until group-hover, so it is invisible/undiscoverable on touch devices (mobile admin cannot delete gallery items).", "selector": "[data-testid^='gallery-delete-']", "priority": "MEDIUM"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "/admin date filters", "issues": ["Uses native browser <input type='date'> pickers (mm/dd/yyyy, US locale) instead of the shadcn Calendar component, inconsistent with the rest of the Indonesian-language UI"]},
+      {"screen": "Materi Download section", "issues": ["Cards advertise 'PPTX - 14.2 MB' and 'PDF / ZIP - 5.8 MB' but the backend always streams a small generated PDF (~few KB), so file type/size labels are misleading"]},
+      {"screen": "/galeri", "issues": ["Public gallery page does not set a meta description (article/tutorial pages do), minor SEO gap"]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_admin_gallery.py",
+    "/app/backend/tests/test_labkom_endpoints.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [
+    "Fix AdminDashboard Reset filter stale closure so resetting dates reloads the unfiltered list",
+    "Make gallery delete button always visible (or visible on focus/tap) for touch devices; add data-testid to Reset button",
+    "Optional: stop passing admin key as URL query param for data endpoints (header only) to avoid secret leaking into logs",
+    "Optional: align Materi Download card labels (PPTX/ZIP/size) with the actual PDF produced by /api/materials/{id}/download"
+  ],
+  "critical_code_review_comments": [
+    "AdminDashboard.jsx: loadAll() is invoked from a setTimeout inside the Reset handler and from useEffect([verified]) with an eslint-disable; move filter state into the effect dependency list to avoid stale-closure reads of dateFrom/dateTo.",
+    "server.py _parse_date_range(): builds a string-comparison range on submitted_at; add an explicit date validation (YYYY-MM-DD) and 400 on malformed input instead of silently returning everything.",
+    "GalleryItemIn.url is a plain str; use HttpUrl (or validate) so invalid/javascript: URLs cannot be stored and rendered in <img>/<iframe> src.",
+    "Admin endpoints have no rate limiting; a guessable-key-only auth model on public internet should at least throttle failed attempts."
+  ],
+  "updated_files": ["/app/backend/tests/test_admin_gallery.py"],
+  "success_rate": {"backend": "100%", "frontend": "95%"},
+  "seed_data_creation": "Created via API/UI: registrations 'TEST QA Iter4' + several TEST_* rows, contacts 'TEST QA Contact' + TEST_* rows, gallery item 'Test Video' (created then deleted through admin UI). API-created gallery items were cleaned up in teardown; registrations/contacts remain because no delete endpoint exists.",
+  "should_call_test_agent_after_fix": false,
+  "should_main_agent_self_test": true,
+  "test_credentials": "ADMIN_KEY=labkom-admin-2026-secret (from /app/backend/.env). /app/memory/test_credentials.md contains only the template header - no credentials recorded; main agent should add the admin key there.",
+  "context_for_next_testing_agent": "Backend suite: /app/backend/tests/test_admin_gallery.py (admin auth/listings/date-filter/gallery CRUD) + test_labkom_endpoints.py (public flows). Run: cd /app/backend && python -m pytest tests/ -v. Note UI gotchas: register-modal-course is a text input (NOT a select) so use fill/read, not select_option; PDF download buttons live under nav-item-download ('Materi Download'), not nav-item-materi; admin gallery delete needs .hover() first; page.goto with wait_until='networkidle' times out on this app (use domcontentloaded). Only open defect: admin filter Reset stale closure.",
+  "rca_of_the_issue": "Admin filter Reset bug: in AdminDashboard.jsx the handler does setDateFrom('')/setDateTo('') then setTimeout(loadAll, 0). loadAll is a closure created during the current render and still reads the pre-reset dateFrom/dateTo values, so the refetch is issued with the old date range while the inputs display empty values - UI and data go out of sync until the user presses 'Terapkan Filter' again."
+}

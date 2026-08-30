@@ -1,5 +1,5 @@
 from dotenv import load_dotenv
-from fastapi import APIRouter, FastAPI, HTTPException
+from fastapi import APIRouter, Depends, FastAPI, HTTPException, Query, Request
 from fastapi.responses import StreamingResponse
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -11,6 +11,7 @@ from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer
 import asyncio
 from datetime import datetime, timezone
 from io import BytesIO
+from typing import Literal, Optional
 import logging
 import os
 import resend
@@ -25,6 +26,14 @@ app = FastAPI(title="LABKOM OFFICIAL API")
 api_router = APIRouter(prefix="/api")
 
 NOTIFY_RECIPIENT = os.environ.get("NOTIFY_RECIPIENT", "labkomlangitan25@gmail.com")
+ADMIN_KEY = os.environ.get("ADMIN_KEY", "")
+
+
+def verify_admin(request: Request, key: Optional[str] = Query(default=None)):
+    provided = key or request.headers.get("x-admin-key")
+    if not ADMIN_KEY or not provided or provided != ADMIN_KEY:
+        raise HTTPException(status_code=401, detail="Kunci admin tidak valid")
+    return True
 
 
 class Registration(BaseModel):
@@ -50,14 +59,24 @@ class ContactMessage(BaseModel):
     submitted_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
+class GalleryItemIn(BaseModel):
+    title: str
+    type: Literal["foto", "video"]
+    url: str
+    description: str = ""
+    category: str = "Umum"
+
+
+class GalleryItem(GalleryItemIn):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
 async def notify_registration(registration: Registration) -> tuple[bool, str | None]:
-    """Try to send email notification. Returns (sent, error_message)."""
     api_key = os.environ.get("RESEND_API_KEY")
     sender = os.environ.get("SENDER_EMAIL", "onboarding@resend.dev")
     if not api_key:
-        msg = "RESEND_API_KEY is not configured"
-        logger.warning(msg)
-        return False, msg
+        return False, "RESEND_API_KEY is not configured"
     resend.api_key = api_key
     params = {
         "from": sender,
@@ -76,17 +95,26 @@ async def notify_registration(registration: Registration) -> tuple[bool, str | N
     }
     try:
         result = await asyncio.to_thread(resend.Emails.send, params)
-        if isinstance(result, dict) and result.get("id"):
-            return True, None
-        # Resend SDK may return dict with error info
         if isinstance(result, dict) and result.get("error"):
-            err = str(result.get("error"))
-            logger.warning("Resend returned error: %s", err)
-            return False, err
+            return False, str(result["error"])
         return True, None
     except Exception as exc:
-        logger.exception("Registration email could not be sent")
+        logger.exception("Resend send failed")
         return False, str(exc)
+
+
+def _clean_doc(doc: dict) -> dict:
+    doc.pop("_id", None)
+    return doc
+
+
+def _parse_date_range(from_: Optional[str], to: Optional[str]):
+    query = {}
+    if from_:
+        query["$gte"] = from_
+    if to:
+        query["$lte"] = to + "T23:59:59.999999+00:00" if len(to) == 10 else to
+    return query
 
 
 @api_router.get("/")
@@ -111,6 +139,67 @@ async def create_contact(message: ContactMessage):
     document["submitted_at"] = message.submitted_at.isoformat()
     await db.contacts.insert_one(document)
     return message
+
+
+# ================ ADMIN ENDPOINTS ================
+@api_router.get("/admin/registrations", dependencies=[Depends(verify_admin)])
+async def admin_list_registrations(from_: Optional[str] = Query(default=None, alias="from"), to: Optional[str] = Query(default=None)):
+    query = {}
+    dr = _parse_date_range(from_, to)
+    if dr:
+        query["submitted_at"] = dr
+    docs = await db.registrations.find(query).sort("submitted_at", -1).to_list(length=1000)
+    return [_clean_doc(d) for d in docs]
+
+
+@api_router.get("/admin/contacts", dependencies=[Depends(verify_admin)])
+async def admin_list_contacts(from_: Optional[str] = Query(default=None, alias="from"), to: Optional[str] = Query(default=None)):
+    query = {}
+    dr = _parse_date_range(from_, to)
+    if dr:
+        query["submitted_at"] = dr
+    docs = await db.contacts.find(query).sort("submitted_at", -1).to_list(length=1000)
+    return [_clean_doc(d) for d in docs]
+
+
+@api_router.get("/admin/stats", dependencies=[Depends(verify_admin)])
+async def admin_stats():
+    reg_count = await db.registrations.count_documents({})
+    contact_count = await db.contacts.count_documents({})
+    gallery_count = await db.gallery.count_documents({})
+    return {"registrations": reg_count, "contacts": contact_count, "gallery": gallery_count}
+
+
+@api_router.get("/admin/verify")
+async def admin_verify(_: bool = Depends(verify_admin)):
+    return {"ok": True}
+
+
+# ================ GALLERY (public read, admin write) ================
+@api_router.get("/gallery")
+async def list_gallery(type: Optional[Literal["foto", "video"]] = None):
+    query = {}
+    if type:
+        query["type"] = type
+    docs = await db.gallery.find(query).sort("created_at", -1).to_list(length=200)
+    return [_clean_doc(d) for d in docs]
+
+
+@api_router.post("/admin/gallery", response_model=GalleryItem, dependencies=[Depends(verify_admin)])
+async def create_gallery_item(item: GalleryItemIn):
+    entry = GalleryItem(**item.model_dump())
+    doc = entry.model_dump()
+    doc["created_at"] = entry.created_at.isoformat()
+    await db.gallery.insert_one(doc)
+    return entry
+
+
+@api_router.delete("/admin/gallery/{item_id}", dependencies=[Depends(verify_admin)])
+async def delete_gallery_item(item_id: str):
+    result = await db.gallery.delete_one({"id": item_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Item galeri tidak ditemukan")
+    return {"deleted": item_id}
 
 
 MATERIALS = {

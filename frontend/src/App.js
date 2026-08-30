@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import {
   Laptop,
   Cpu,
@@ -26,13 +27,17 @@ import {
   Clock,
   Tag,
   Send,
-  Check
+  Check,
+  Image as ImageIcon
 } from "lucide-react";
 import { FaWhatsapp, FaInstagram, FaYoutube, FaFacebook, FaLinkedin, FaGithub } from "react-icons/fa";
 import { toast, Toaster } from "sonner";
 import confetti from "canvas-confetti";
+import { articles, tutorials, slugify } from "./data/content";
+import Testimonials from "./components/Testimonials";
 
 export default function App() {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("home");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -53,15 +58,10 @@ export default function App() {
   });
   const [downloadSearch, setDownloadSearch] = useState("");
   const [articleSearch, setArticleSearch] = useState("");
-  const [selectedArticle, setSelectedArticle] = useState(null);
-  const [selectedTutorial, setSelectedTutorial] = useState(null);
   const backendUrl = process.env.REACT_APP_BACKEND_URL;
 
-  const openShareableContent = (type, item) => {
-    const slug = item.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-    window.history.pushState({}, "", `#${type}/${slug}`);
-    type === "artikel" ? setSelectedArticle(item) : setSelectedTutorial(item);
-  };
+  const openArticle = (item) => navigate(`/artikel/${slugify(item.title)}`);
+  const openTutorial = (item) => navigate(`/tutorial/${slugify(item.title)}`);
 
   const categories = [
     "Semua",
@@ -164,39 +164,6 @@ export default function App() {
       description: "Manfaatkan ChatGPT, Claude, dan AI generative lainnya untuk mempercepat pekerjaan harian hingga 10x lipat.",
       image: "https://images.unsplash.com/photo-1758685848208-e108b6af94cc?auto=format&fit=crop&w=800&q=80",
       syllabus: ["Pengenalan Generative AI & LLM", "Advanced Prompt Engineering Framework", "Automating Workflow dengan AI Tools", "Etika dan Masa Depan Teknologi AI"]
-    }
-  ];
-
-  const articles = [
-    {
-      id: 1,
-      title: "10 Pintasan Excel Paling Penting untuk Pekerjaan Perkantoran 2026",
-      category: "Microsoft Excel",
-      date: "10 Juli 2026",
-      author: "Tim Labkom Official",
-      readTime: "5 menit baca",
-      excerpt: "Tingkatkan produktivitas kerja Anda dengan menguasai shortcut Excel berikut yang jarang diketahui orang awam namun sangat ampuh.",
-      content: "Microsoft Excel adalah salah satu perangkat lunak paling diandalkan di dunia perkantoran. Dalam artikel ini, kami merangkum 10 pintasan keyboard (shortcut) terbaik yang akan menghemat waktu Anda berjam-jam setiap minggunya..."
-    },
-    {
-      id: 2,
-      title: "Mengenal Perbedaan Artificial Intelligence Generatif vs Agentic AI",
-      category: "AI & Teknologi",
-      date: "8 Juli 2026",
-      author: "Ahmad Teknokrat, M.Kom",
-      readTime: "7 menit baca",
-      excerpt: "Teknologi AI terus berkembang pesat. Simak bagaimana AI agent mandiri mulai mengambil alih tugas-tugas kompleks secara otomatis.",
-      content: "Perkembangan AI telah melewati era teks generatif sederhana. Saat ini kita memasuki era Agentic AI, di mana sistem komputer tidak hanya menjawab pertanyaan, tetapi juga merencanakan dan mengeksekusi tugas multi-langkah secara mandiri..."
-    },
-    {
-      id: 3,
-      title: "Panduan Merakit PC Gaming & Kerja Produktif Tanpa Bottleneck",
-      category: "Hardware & Software",
-      date: "5 Juli 2026",
-      author: "Budi Hardware",
-      readTime: "10 menit baca",
-      excerpt: "Tips memilih CPU, GPU, RAM, dan NVMe SSD yang seimbang sesuai budget agar performa komputer maksimal untuk berbagai kebutuhan.",
-      content: "Memilih komponen PC seringkali membingungkan bagi pemula. Kesalahan dalam memilih motherboard atau RAM yang tidak seimbang dapat menyebabkan bottleneck. Simak panduan lengkap kami untuk merakit PC impian Anda..."
     }
   ];
 
@@ -405,6 +372,13 @@ export default function App() {
                   {item.label}
                 </button>
               ))}
+              <Link
+                to="/galeri"
+                data-testid="nav-item-galeri"
+                className="px-3.5 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all inline-flex items-center gap-1.5"
+              >
+                <ImageIcon className="w-3.5 h-3.5" /> Galeri
+              </Link>
             </nav>
 
             {/* RIGHT CTA & MOBILE HAMBURGER */}
@@ -459,6 +433,14 @@ export default function App() {
                 {item.label}
               </button>
             ))}
+            <Link
+              to="/galeri"
+              data-testid="mobile-nav-galeri"
+              onClick={() => setMobileMenuOpen(false)}
+              className="w-full block text-left px-4 py-3 rounded-xl text-base font-medium text-slate-700 hover:bg-slate-50"
+            >
+              Galeri
+            </Link>
             <div className="pt-3">
               <button
                 onClick={() => {
@@ -746,7 +728,7 @@ export default function App() {
                           <span className="bg-blue-50 text-blue-600 font-bold px-2.5 py-1 rounded-md">{art.category}</span>
                           <span>{art.date}</span>
                         </div>
-                        <h3 className="text-lg font-bold text-slate-900 mb-3 line-clamp-2 hover:text-blue-600 cursor-pointer" onClick={() => setActiveTab("artikel")}>
+                        <h3 className="text-lg font-bold text-slate-900 mb-3 line-clamp-2 hover:text-blue-600 cursor-pointer" onClick={() => openArticle(art)}>
                           {art.title}
                         </h3>
                         <p className="text-slate-600 text-sm mb-6 line-clamp-3">{art.excerpt}</p>
@@ -755,7 +737,7 @@ export default function App() {
                       <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500 font-medium">
                         <span>{art.author}</span>
                         <button
-                          onClick={() => setActiveTab("artikel")}
+                          onClick={() => openArticle(art)}
                           className="text-blue-600 font-bold hover:underline flex items-center gap-1"
                         >
                           Baca <ArrowRight className="w-3 h-3" />
@@ -1106,6 +1088,7 @@ export default function App() {
                 </div>
               )}
             </div>
+            {!selectedCourse && <Testimonials />}
           </div>
         )}
 
@@ -1122,27 +1105,8 @@ export default function App() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                {[
-                  {
-                    title: "Cara Mudah Membuat Mail Merge Sertifikat dengan Excel dan Word",
-                    category: "Microsoft Word",
-                    readTime: "6 min baca",
-                    desc: "Cetak ratusan sertifikat atau surat undangan otomatis dalam hitungan detik menggunakan fitur Mail Merge."
-                  },
-                  {
-                    title: "Tutorial Dasar Mikrotik: Konfigurasi Hotspot dan DHCP Server",
-                    category: "Jaringan Komputer",
-                    readTime: "9 min baca",
-                    desc: "Panduan konfigurasi router Mikrotik untuk warnet, kantor, atau sekolah dari awal hingga terhubung internet."
-                  },
-                  {
-                    title: "Tips Mengatasi Komputer / Laptop Lemot Tanpa Instal Ulang",
-                    category: "Troubleshooting Komputer",
-                    readTime: "5 min baca",
-                    desc: "Langkah-langkah membersihkan file sampah, mengatur startup, dan optimalisasi SSD agar laptop kembali ngebut."
-                  }
-                ].map((tut, idx) => (
-                  <div key={idx} data-testid={`tutorial-card-${idx}`} className="bg-slate-50 p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-xl transition-all flex flex-col justify-between">
+                {tutorials.map((tut, idx) => (
+                  <div key={tut.id} data-testid={`tutorial-card-${idx}`} className="bg-slate-50 p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-xl transition-all flex flex-col justify-between">
                     <div>
                       <div className="flex items-center justify-between text-xs text-slate-500 mb-3">
                         <span className="bg-blue-100 text-blue-700 font-bold px-2.5 py-1 rounded-md">{tut.category}</span>
@@ -1153,7 +1117,7 @@ export default function App() {
                     </div>
                     <button
                       data-testid={`tutorial-read-${idx}`}
-                      onClick={() => openShareableContent("tutorial", tut)}
+                      onClick={() => openTutorial(tut)}
                       className="inline-flex items-center gap-2 text-blue-600 font-bold hover:underline text-sm"
                     >
                       <span>Baca Tutorial Lengkap</span>
@@ -1186,7 +1150,7 @@ export default function App() {
                         <span className="bg-blue-50 text-blue-600 font-bold px-2.5 py-1 rounded-md">{art.category}</span>
                         <span>{art.date}</span>
                       </div>
-                        <h3 data-testid={`article-title-${art.id}`} className="text-xl font-bold text-slate-900 mb-3 cursor-pointer hover:text-blue-600" onClick={() => openShareableContent("artikel", art)}>{art.title}</h3>
+                        <h3 data-testid={`article-title-${art.id}`} className="text-xl font-bold text-slate-900 mb-3 cursor-pointer hover:text-blue-600" onClick={() => openArticle(art)}>{art.title}</h3>
                       <p className="text-slate-600 text-sm mb-4 leading-relaxed">{art.content}</p>
                     </div>
                     <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500 font-medium">
@@ -1368,64 +1332,6 @@ export default function App() {
 
       </main>
 
-      {(selectedArticle || selectedTutorial) && (
-        <div className="fixed inset-0 z-[60] bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <article className="bg-white rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-y-auto p-8 sm:p-12 shadow-2xl border border-slate-200">
-            <div className="flex items-start justify-between gap-6 mb-8">
-              <div>
-                <span className="text-blue-600 font-bold uppercase text-xs">{(selectedArticle || selectedTutorial).category}</span>
-                <h2 data-testid="content-detail-title" className="text-3xl sm:text-4xl font-extrabold text-slate-900 mt-2">{(selectedArticle || selectedTutorial).title}</h2>
-              </div>
-              <button data-testid="close-content-detail" onClick={() => { setSelectedArticle(null); setSelectedTutorial(null); window.history.pushState({}, "", window.location.pathname); }} className="p-2 rounded-xl text-slate-500 hover:bg-slate-100 transition-colors" aria-label="Tutup detail">
-                <X className="w-6 h-6" />
-              </button>
-            </div>
-            <p data-testid="content-detail-body" className="text-slate-600 leading-relaxed text-lg">
-              {(selectedArticle || selectedTutorial).content || (selectedArticle || selectedTutorial).desc}
-            </p>
-            <div className="mt-8 pt-6 border-t border-slate-100 flex flex-wrap gap-3 items-center">
-              <span className="text-sm text-slate-500">Materi dari LABKOM OFFICIAL</span>
-              <button data-testid="share-content-button" onClick={async () => {
-                const shareUrl = window.location.href;
-                try {
-                  if (navigator.share) {
-                    await navigator.share({ title: (selectedArticle || selectedTutorial).title, url: shareUrl });
-                    return;
-                  }
-                  if (navigator.clipboard && navigator.clipboard.writeText) {
-                    await navigator.clipboard.writeText(shareUrl);
-                    toast.success("Tautan berhasil disalin");
-                    return;
-                  }
-                  throw new Error("no-clipboard");
-                } catch (err) {
-                  try {
-                    const ta = document.createElement("textarea");
-                    ta.value = shareUrl;
-                    ta.setAttribute("readonly", "");
-                    ta.style.position = "fixed";
-                    ta.style.opacity = "0";
-                    document.body.appendChild(ta);
-                    ta.select();
-                    const ok = document.execCommand && document.execCommand("copy");
-                    document.body.removeChild(ta);
-                    if (ok) {
-                      toast.success("Tautan berhasil disalin");
-                    } else {
-                      toast.info("Salin tautan manual: " + shareUrl);
-                    }
-                  } catch (e2) {
-                    toast.info("Salin tautan manual: " + shareUrl);
-                  }
-                }
-              }} className="ml-auto inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl text-sm font-bold transition-all">
-                <ExternalLink className="w-4 h-4" /> Bagikan Tautan
-              </button>
-            </div>
-          </article>
-        </div>
-      )}
-
       {/* MODAL PENDAFTARAN KURSUS */}
       {isRegisterModalOpen && (
         <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
@@ -1572,6 +1478,9 @@ export default function App() {
                     </button>
                   </li>
                 ))}
+                <li>
+                  <Link to="/galeri" className="hover:text-white transition-colors">Galeri Foto & Video</Link>
+                </li>
               </ul>
             </div>
 
