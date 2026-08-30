@@ -252,7 +252,7 @@ export default function App() {
     if (notificationSent) {
       toast.success("Pendaftaran kursus berhasil dikirim! Tim Labkom Official akan segera menghubungi Anda via WhatsApp.");
     } else {
-      toast.success("Pendaftaran tersimpan. Tim Labkom Official akan menghubungi Anda via WhatsApp 082132976144.");
+      toast.success("Pendaftaran tersimpan. Tim Labkom Official akan menghubungi Anda via WhatsApp 0821-3297-6144.");
     }
     setIsRegisterModalOpen(false);
     setRegisterForm({ name: "", email: "", whatsapp: "", courseName: "", note: "" });

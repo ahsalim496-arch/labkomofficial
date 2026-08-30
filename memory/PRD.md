@@ -59,3 +59,12 @@ Website edukasi teknologi profesional Indonesia (www.labkomofficial.com) untuk b
 - P2: Header-only admin key, avoid ?key= di query
 - P2: Move Resend send ke BackgroundTasks
 - P2: Soft delete untuk gallery (Emergent Object Storage tidak punya delete API)
+
+## GitHub Readiness (Jun 2026)
+- Backend pytest 65/65 lulus; frontend production build (`yarn build`) sukses tanpa error
+- Tidak ada bug/hardcoded secret ditemukan; deployment agent 2x PASS
+- Dibuat: `backend/.env.example`, `frontend/.env.example` (template env, gitignore exception `!.env.example`)
+- README.md ditulis lengkap: fitur, struktur, cara run lokal, tabel env vars
+- Fix minor: format nomor WA di toast pendaftaran (0821-3297-6144)
+- Catatan: kursus = data statis frontend (tidak ada /api/courses, by design)
+
