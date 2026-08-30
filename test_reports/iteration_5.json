@@ -1,0 +1,26 @@
+{
+  "summary": "Frontend-only testing of the /admin access bug fix (AdminDashboard.jsx inline key login form) plus full admin regression. All 8 bug-fix scenarios PASSED: (1) /admin without ?key shows 'Masuk Dashboard Admin' card with admin-key-input (type=password), admin-key-submit and back-home-btn; (2) empty submit shows toast 'Masukkan kunci admin' with ZERO requests to /api/admin/verify (verified by request interception) and stays on the form; (3) wrong key 'wrong-key' -> toast 'Kunci admin salah. Coba lagi.' shown, stays on login form, URL remains /admin (backend returns 401 - expected, logged as console 401 only); (4) valid key 'labkom-admin-2026-secret' -> URL becomes /admin?key=labkom-admin-2026-secret and dashboard loads with all 4 tabs (admin-tab-registrations/contacts/gallery/reviews); (5) direct /admin?key=<valid> loads dashboard with no login form rendered (count=0); (6) direct /admin?key=xxx renders login form (no crash) and correct key entry recovers into the dashboard; (7) back-home-btn navigates to /; (8) mobile 390x844: login form fits with zero horizontal overflow, full-width submit button, login->dashboard works. Regression on dashboard: 4-tab switching all render correct panels; date filter 18 -> 0 rows for 2020 window and Reset now correctly restores 18 rows with cleared inputs (iteration-4 stale-closure bug CONFIRMED FIXED, reset-filter-btn testid now present); gallery add via URL (3 -> 4 items + success toast + form reset) and delete of the created item (4 -> 3 + confirm dialog + toast) work; gallery upload mode toggle renders gallery-file-input; review hide -> 'Ulasan disembunyikan' and approve -> 'Ulasan disetujui' both work (state restored, no reviews deleted); refresh-btn reloads data without errors. No JS console errors other than the expected 401 for invalid-key verify calls.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "/admin dashboard header (mobile 390px)", "issues": ["Logo/title block and Refresh + 'Ke Website' links crowd each other; 'PANEL KONTROL INTERNAL' wraps to two lines and sits directly under the Refresh control - consider stacking or hiding the subtitle below sm breakpoint"]},
+      {"screen": "/admin date filters", "issues": ["Still uses native <input type=date> (mm/dd/yyyy US format) instead of shadcn Calendar, inconsistent with the Indonesian UI (carried over from iteration 4, cosmetic)"]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_admin_gallery.py", "/app/backend/tests/test_labkom_endpoints.py"],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "AdminDashboard.jsx: submitKey is declared inside the `if (verified === false)` branch - it is re-created on every render and mixes control flow with component definition. Consider hoisting it to the component body (useCallback) for readability.",
+    "Successful login navigates with the key in the query string, so the admin secret ends up in browser history / Referer / ingress logs. Consider storing it in sessionStorage after verify and dropping it from the URL.",
+    "No rate limiting on /api/admin/verify: the new login form makes brute-forcing the single shared key easier from the browser. Add throttling on failed attempts."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "not tested (frontend-only request)", "frontend": "100%"},
+  "seed_data_creation": "Created and then deleted gallery item 'TEST_QA_Iter5_Foto' via the admin UI. Review approval states were toggled and restored to their original values. No residual test data.",
+  "should_call_test_agent_after_fix": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Admin login flow: go to /admin, fill admin-key-input with 'labkom-admin-2026-secret', click admin-key-submit -> redirects to /admin?key=... Add a ~3s wait between consecutive toast assertions (sonner toasts persist and can cause false positives). Gallery delete button needs .hover() on the gallery-item-<id> card first on desktop. Use wait_until='domcontentloaded' for page.goto (networkidle times out on this app). Iteration-4 open defect (filter Reset stale closure) is fixed and re-verified.",
+  "rca_of_the_issue": "Original bug: users hitting /admin without ?key only saw a static 'Akses Ditolak' screen with no way to enter the key. Fix adds an inline verify form on the verified===false branch that POSTs to /api/admin/verify and navigates to /admin?key=... on 200. Verified working for empty / wrong / valid key and for wrong keys supplied directly in the URL."
+}

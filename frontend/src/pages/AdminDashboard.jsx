@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { toast, Toaster } from "sonner";
 import {
   LayoutDashboard,
@@ -23,8 +23,11 @@ const resolveUrl = (u) => (u && u.startsWith("/api/") ? `${backendUrl}${u}` : u)
 
 export default function AdminDashboard() {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const key = searchParams.get("key") || "";
   const [verified, setVerified] = useState(null);
+  const [keyInput, setKeyInput] = useState("");
+  const [checking, setChecking] = useState(false);
   const [tab, setTab] = useState("registrations");
   const [registrations, setRegistrations] = useState([]);
   const [contacts, setContacts] = useState([]);
@@ -191,17 +194,74 @@ export default function AdminDashboard() {
   }
 
   if (verified === false) {
+    const submitKey = async (e) => {
+      e.preventDefault();
+      const trimmed = keyInput.trim();
+      if (!trimmed) {
+        toast.error("Masukkan kunci admin");
+        return;
+      }
+      setChecking(true);
+      try {
+        const res = await fetch(`${backendUrl}/api/admin/verify?key=${encodeURIComponent(trimmed)}`);
+        if (res.ok) {
+          navigate(`/admin?key=${encodeURIComponent(trimmed)}`, { replace: true });
+        } else {
+          toast.error("Kunci admin salah. Coba lagi.");
+        }
+      } catch {
+        toast.error("Tidak bisa menghubungi server. Coba lagi.");
+      } finally {
+        setChecking(false);
+      }
+    };
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4">
-        <div className="max-w-md w-full bg-white rounded-3xl shadow-xl border border-slate-200 p-10 text-center">
-          <div className="w-16 h-16 rounded-2xl bg-red-50 flex items-center justify-center mx-auto mb-6">
-            <Lock className="w-8 h-8 text-red-500" />
+        <Toaster position="top-right" richColors />
+        <div className="max-w-md w-full bg-white rounded-3xl shadow-xl border border-slate-200 p-8 sm:p-10">
+          <div className="flex items-center gap-3 mb-6">
+            <img src="/assets/labkom-logo.png" alt="LABKOM" className="w-12 h-12 object-contain" />
+            <div>
+              <span className="font-extrabold text-lg text-slate-900 block leading-none">
+                LABKOM <span className="text-blue-600">ADMIN</span>
+              </span>
+              <span className="text-[10px] text-slate-500 uppercase tracking-widest">Panel Kontrol Internal</span>
+            </div>
           </div>
-          <h1 className="text-2xl font-extrabold text-slate-900 mb-3">Akses Ditolak</h1>
-          <p className="text-slate-600 mb-6">Kunci admin tidak valid atau tidak disertakan. Gunakan URL dengan parameter <code className="bg-slate-100 px-1.5 py-0.5 rounded text-xs">?key=...</code></p>
-          <Link to="/" className="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-bold" data-testid="back-home-btn">
-            Kembali ke Beranda
-          </Link>
+          <div className="w-14 h-14 rounded-2xl bg-blue-50 flex items-center justify-center mb-5">
+            <Lock className="w-7 h-7 text-blue-600" />
+          </div>
+          <h1 className="text-2xl font-extrabold text-slate-900 mb-2">Masuk Dashboard Admin</h1>
+          <p className="text-slate-600 text-sm mb-6">Masukkan kunci admin untuk mengakses data pendaftaran, kontak, galeri, dan ulasan alumni.</p>
+
+          <form onSubmit={submitKey} className="space-y-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-widest">Kunci Admin</label>
+              <input
+                type="password"
+                data-testid="admin-key-input"
+                value={keyInput}
+                onChange={(e) => setKeyInput(e.target.value)}
+                autoFocus
+                placeholder="Masukkan kunci admin Anda"
+                className="w-full px-4 py-3 rounded-xl border border-slate-300 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm"
+              />
+            </div>
+            <button
+              type="submit"
+              data-testid="admin-key-submit"
+              disabled={checking}
+              className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-slate-400 text-white py-3 rounded-xl font-bold text-sm shadow-md flex items-center justify-center gap-2"
+            >
+              {checking ? (<><RefreshCw className="w-4 h-4 animate-spin" /> Memverifikasi...</>) : (<><Lock className="w-4 h-4" /> Masuk</>)}
+            </button>
+          </form>
+
+          <div className="mt-6 pt-6 border-t border-slate-100 text-center">
+            <Link to="/" className="text-sm text-slate-500 hover:text-blue-600 font-semibold" data-testid="back-home-btn">
+              ← Kembali ke Beranda
+            </Link>
+          </div>
         </div>
       </div>
     );
