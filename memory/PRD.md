@@ -1,52 +1,46 @@
-# PRD — LABKOM OFFICIAL
+# LABKOM OFFICIAL - PRD
 
-**Tanggal pembaruan:** 2026-08-30
-
-## Problem Statement
-LABKOM OFFICIAL membutuhkan website profesional, modern, responsif, dan berbahasa Indonesia sebagai pusat informasi serta pembelajaran komputer, teknologi, dan keterampilan digital di www.labkomofficial.com.
+## Original Problem Statement
+Website edukasi teknologi profesional Indonesia (www.labkomofficial.com) untuk belajar komputer, teknologi, dan keterampilan digital.
 
 ## User Personas
-- Pelajar dan mahasiswa yang ingin membangun fondasi komputer dan skill kerja.
-- Guru dan profesional yang membutuhkan materi praktis.
-- Masyarakat umum dan pemula yang ingin belajar teknologi secara bertahap.
+Pelajar, mahasiswa, guru, masyarakat umum, pemula yang ingin menguasai komputer.
 
-## Arsitektur dan Keputusan
-- React dengan navigasi berbasis state untuk pengalaman single-page yang cepat.
-- Tailwind CSS dan komponen ikon untuk tampilan konsisten dan responsif.
-- Konten katalog dan artikel terstruktur sebagai data frontend agar mudah dikembangkan.
-- Form pendaftaran dan kontak menggunakan localStorage sebagai alur demo yang disepakati pengguna.
-- Backend FastAPI/MongoDB tetap tersedia sebagai fondasi API berikutnya; URL dan environment bawaan tidak diubah.
+## Core Requirements (Static)
+- Landing page dengan hero + CTA (Mulai Belajar, Lihat Kursus)
+- Navigasi: Home, Tentang Kami, Belajar Komputer, Kursus, Tutorial, Artikel, Materi Download, Kontak
+- Kartu kursus (nama, deskripsi, level, durasi, harga, tombol daftar)
+- Kategori materi (13 kategori)
+- Pencarian, filter, form pendaftaran & kontak, tombol WhatsApp
+- Responsive, SEO-friendly, Bahasa Indonesia
+- Palet biru/putih/slate, modern & bersih
 
-## Kebutuhan Inti (Statis)
-- Branding, tagline, hero, pengenalan, keunggulan, kursus unggulan, artikel/tutorial, CTA, footer.
-- Navigasi Home, Tentang Kami, Belajar Komputer, Kursus, Tutorial, Artikel, Materi Download, Kontak.
-- 13 kategori materi, pencarian, katalog kursus, detail kursus, pendaftaran, kontak, WhatsApp.
-- Tampilan Bahasa Indonesia, SEO dasar, cepat, responsif desktop/tablet/ponsel.
+## Implementation Log
+- 2026-08 Initial MVP: Landing, navigasi, kursus, materi, artikel/tutorial, form, WhatsApp, responsif (DONE)
+- 2026-08 Fase Lanjutan: 
+  - Persistensi MongoDB untuk pendaftaran & kontak (DONE)
+  - 4 PDF materi asli via ReportLab (DONE)
+  - Detail artikel/tutorial shareable dengan hash URL (DONE)
+  - Notifikasi email via Resend (DONE - delivered to Resend account owner)
+- 2026-08 Iteration 3 fixes:
+  - Share button clipboard rejection handled dengan try/catch + fallback execCommand/manual (DONE)
+  - Email notification transparency: response API kini expose notification_sent & notification_error, tersimpan di DB (DONE)
+  - Logo baru custom (monitor merah dengan simbol tradisional) diintegrasikan di navbar + footer + favicon (DONE)
 
-## Yang Telah Diimplementasikan
-**2026-08-30**
-- Landing page lengkap LABKOM OFFICIAL dengan identitas visual biru, putih, dan slate serta gambar edukasi teknologi.
-- Navigasi desktop/mobile, kategori materi, pencarian, detail kursus, form demo, artikel, tutorial, materi download, kontak, dan floating WhatsApp.
-- Metadata SEO: judul, deskripsi, kata kunci, bahasa Indonesia, theme color, serta typography Outfit/Inter.
-- Data pendaftaran dan pesan kontak demo disimpan di browser localStorage dan memberi konfirmasi visual.
-- Build frontend berhasil dan pengujian desktop/mobile seluruhnya lolos.
+## Tech Stack
+- Frontend: React (CRA + CRACO), TailwindCSS, Shadcn UI, Sonner
+- Backend: FastAPI + Motor async MongoDB
+- Documents: ReportLab (PDF asli)
+- Email: Resend SDK
 
-## Backlog Terprioritas
-### P0 — berikutnya
-- Sambungkan pendaftaran dan pesan kontak ke API FastAPI serta MongoDB.
-- Sediakan file materi download nyata dan endpoint pengelolaan materi.
+## Prioritized Backlog
+- P1: Split /app/frontend/src/App.js (1625 lines) menjadi komponen kecil
+- P1: Verifikasi domain di Resend agar email bisa dikirim ke labkomlangitan25@gmail.com (bukan hanya account owner)
+- P2: Move Resend send ke FastAPI BackgroundTasks untuk mengurangi latency response
+- P2: Rate limiting + honeypot pada endpoint public write (anti-spam)
+- P2: Halaman admin sederhana untuk melihat semua pendaftaran/kontak
+- P2: URL routing (react-router) dengan slug per artikel untuk SEO deep-link
 
-### P1
-- Tambahkan halaman admin untuk mengelola kursus, artikel, tutorial, dan materi.
-- Tambahkan detail artikel/tutorial dengan URL yang dapat dibagikan.
-- Tambahkan notifikasi email atau WhatsApp untuk pendaftar baru.
-
-### P2
-- Tambahkan akun peserta, progres belajar, dan sertifikat digital.
-- Tambahkan analitik pencarian, kursus populer, serta rekomendasi materi.
-
-## Tugas Fase Berikutnya
-1. Buat API domain untuk kursus, artikel, pendaftaran, kontak, dan materi.
-2. Migrasikan penyimpanan demo ke database dengan validasi dan keamanan.
-3. Ganti tombol download feedback dengan berkas yang benar-benar dapat diunduh.
-4. Pecah App.js menjadi komponen halaman kecil sebelum ekspansi fitur besar.
+## Environment
+- MONGO_URL, DB_NAME, RESEND_API_KEY, SENDER_EMAIL, NOTIFY_RECIPIENT di /app/backend/.env
+- REACT_APP_BACKEND_URL di /app/frontend/.env

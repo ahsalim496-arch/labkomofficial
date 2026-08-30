@@ -1,0 +1,38 @@
+{
+  "summary": "Re-tested both regression fixes plus full flows. Backend: 11/11 pytest passed (registrations with notification_sent/notification_error transparency + MongoDB persistence, contacts persistence, validation 422s, 4 PDF downloads with %PDF- signature, 404 for unknown material). Resend email actually delivered (notification_sent=true, notification_error=null persisted in DB, no errors in backend logs). Frontend: share button with navigator.share removed + clipboard.writeText rejecting NotAllowedError + execCommand disabled produced NO webpack overlay, showed fallback toast 'Salin tautan manual: <url>', and close-content-detail still closed the modal. Registration modal flow (POST 200, confetti, success toast, modal closes), contact form (POST 200, toast, fields reset), PDF download from UI, tutorial/article hash-shareable detail URLs, mobile 390x844 nav menu with no horizontal scroll (scrollWidth==clientWidth on home & kursus), WhatsApp float -> wa.me/6287741844019. All copy in Bahasa Indonesia.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "POST /api/registrations", "issue": "Email is sent synchronously inside the request (blocking Resend call adds latency, ~0.5-1s). Consider BackgroundTasks."},
+      {"endpoint": "POST /api/registrations, /api/contacts", "issue": "No GET/list endpoint exists, so persistence can only be verified directly against MongoDB; also no rate limiting on public write endpoints (spam risk)."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Mobile (390x844) all views", "issues": ["Floating WhatsApp button overlaps card content/right edge of text at small widths; consider bottom offset or smaller size"]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_labkom_endpoints.py", "/app/test_reports/pytest/pytest_results.xml"],
+  "action_items": [
+    "Optional: align data-testid names with docs (request mentioned register-name-input / register-course-select / whatsapp-float; actual are register-modal-name / register-modal-course / floating-whatsapp-btn)",
+    "Optional: move Resend send to FastAPI BackgroundTasks to avoid blocking the registration response"
+  ],
+  "critical_code_review_comments": [
+    "/app/frontend/src/App.js is 1625 lines - split into components (Navbar, Hero, Courses, Articles, Modals) for maintainability",
+    "NOTIFY_RECIPIENT has a hardcoded default fallback in server.py; prefer failing fast or leaving unset",
+    "Registration/contact writes are unauthenticated and unthrottled; add basic anti-abuse (rate limit / honeypot)"
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_labkom_endpoints.py (rewritten as pytest classes with DB persistence + notification field assertions)",
+    "/app/frontend/src/App.js (added missing data-testid=\"article-title-{id}\" on clickable article heading only)"
+  ],
+  "success_rate": {"backend": "100% (11/11)", "frontend": "100% of tested flows"},
+  "seed_data_creation": "TEST_ prefixed registrations and contacts created via public API/UI (records left in DB intentionally since no delete endpoint exists)",
+  "should_call_test_agent_after_fix": false,
+  "should_main_agent_self_test": true,
+  "test_credentials": "None required (no auth). /app/memory/test_credentials.md present but not needed.",
+  "context_for_next_testing_agent": "Both iteration-2 HIGH bugs are verified fixed: (1) share clipboard rejection now handled gracefully with fallback toast and no CRA overlay; (2) Resend now returns notification_sent=true to ahsalim496@gmail.com and the flag is persisted. Regression suite: pytest /app/backend/tests/test_labkom_endpoints.py (uses REACT_APP_BACKEND_URL + direct Motor DB checks). Article detail is opened by clicking data-testid=article-title-{id}; tutorials via tutorial-read-{idx}.",
+  "rca_of_the_issue": "Fix #1: share handler now wraps navigator.share/clipboard in async try/catch with execCommand and manual-copy toast fallbacks, so no unhandled promise rejection reaches the CRA dev overlay. Fix #2: NOTIFY_RECIPIENT changed to the Resend account owner address, satisfying Resend testing-mode restriction; notify_registration returns (sent, error) which is stored and echoed in the API response."
+}

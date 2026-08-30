@@ -53,6 +53,15 @@ export default function App() {
   });
   const [downloadSearch, setDownloadSearch] = useState("");
   const [articleSearch, setArticleSearch] = useState("");
+  const [selectedArticle, setSelectedArticle] = useState(null);
+  const [selectedTutorial, setSelectedTutorial] = useState(null);
+  const backendUrl = process.env.REACT_APP_BACKEND_URL;
+
+  const openShareableContent = (type, item) => {
+    const slug = item.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+    window.history.pushState({}, "", `#${type}/${slug}`);
+    type === "artikel" ? setSelectedArticle(item) : setSelectedTutorial(item);
+  };
 
   const categories = [
     "Semua",
@@ -249,45 +258,77 @@ export default function App() {
     }
   ];
 
-  const handleRegisterSubmit = (e) => {
+  const handleRegisterSubmit = async (e) => {
     e.preventDefault();
     if (!registerForm.name || !registerForm.whatsapp || !registerForm.courseName) {
       toast.error("Mohon lengkapi Nama, WhatsApp, dan Pilihan Kursus!");
       return;
     }
-    const existingRegistrations = JSON.parse(localStorage.getItem("labkom_registrations") || "[]");
-    localStorage.setItem("labkom_registrations", JSON.stringify([
-      ...existingRegistrations,
-      { ...registerForm, submittedAt: new Date().toISOString() }
-    ]));
+    let notificationSent = true;
+    try {
+      const response = await fetch(`${backendUrl}/api/registrations`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...registerForm, email: registerForm.email || null, course_name: registerForm.courseName })
+      });
+      if (!response.ok) throw new Error("registration failed");
+      const data = await response.json().catch(() => ({}));
+      notificationSent = data?.notification_sent !== false;
+    } catch (error) {
+      toast.error("Pendaftaran belum terkirim. Silakan coba lagi.");
+      return;
+    }
     confetti({
       particleCount: 100,
       spread: 70,
       origin: { y: 0.6 }
     });
-    toast.success("Pendaftaran kursus berhasil dikirim! Tim Labkom Official akan segera menghubungi Anda via WhatsApp.");
+    if (notificationSent) {
+      toast.success("Pendaftaran kursus berhasil dikirim! Tim Labkom Official akan segera menghubungi Anda via WhatsApp.");
+    } else {
+      toast.success("Pendaftaran tersimpan. Tim Labkom Official akan menghubungi Anda via WhatsApp 087741844019.");
+    }
     setIsRegisterModalOpen(false);
     setRegisterForm({ name: "", email: "", whatsapp: "", courseName: "", note: "" });
   };
 
-  const handleContactSubmit = (e) => {
+  const handleContactSubmit = async (e) => {
     e.preventDefault();
     if (!contactForm.name || !contactForm.message) {
       toast.error("Mohon lengkapi Nama dan Pesan Anda!");
       return;
     }
-    const existingMessages = JSON.parse(localStorage.getItem("labkom_messages") || "[]");
-    localStorage.setItem("labkom_messages", JSON.stringify([
-      ...existingMessages,
-      { ...contactForm, submittedAt: new Date().toISOString() }
-    ]));
+    try {
+      const response = await fetch(`${backendUrl}/api/contacts`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...contactForm, email: contactForm.email || null })
+      });
+      if (!response.ok) throw new Error("contact failed");
+    } catch (error) {
+      toast.error("Pesan belum terkirim. Silakan coba lagi.");
+      return;
+    }
     toast.success("Pesan Anda telah terkirim! Terima kasih telah menghubungi Labkom Official.");
     setContactForm({ name: "", email: "", message: "" });
   };
 
-  const triggerDownload = (item) => {
-    confetti({ particleCount: 50, spread: 60 });
-    toast.success(`Mengunduh file: ${item.title} (${item.fileType})`);
+  const triggerDownload = async (item) => {
+    try {
+      const response = await fetch(`${backendUrl}/api/materials/${item.id}/download`);
+      if (!response.ok) throw new Error("download failed");
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${item.title}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      confetti({ particleCount: 50, spread: 60 });
+      toast.success(`Mengunduh file: ${item.title}`);
+    } catch (error) {
+      toast.error("Berkas belum dapat diunduh. Silakan coba lagi.");
+    }
   };
 
   const filteredCourses = courses.filter((c) => {
@@ -328,9 +369,7 @@ export default function App() {
           <div className="flex items-center justify-between h-20">
             {/* LOGO */}
             <div className="flex items-center gap-3 cursor-pointer" onClick={() => setActiveTab("home")} data-testid="nav-logo">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center text-white shadow-lg shadow-blue-600/20">
-                <Laptop className="w-6 h-6" />
-              </div>
+              <img src="/assets/labkom-logo.png" alt="LABKOM OFFICIAL" className="w-12 h-12 object-contain" />
               <div>
                 <span className="font-extrabold text-xl tracking-tight text-slate-900 block leading-none">
                   LABKOM <span className="text-blue-600">OFFICIAL</span>
@@ -1113,7 +1152,8 @@ export default function App() {
                       <p className="text-slate-600 text-sm mb-6">{tut.desc}</p>
                     </div>
                     <button
-                      onClick={() => toast.info("Membuka tutorial lengkap...")}
+                      data-testid={`tutorial-read-${idx}`}
+                      onClick={() => openShareableContent("tutorial", tut)}
                       className="inline-flex items-center gap-2 text-blue-600 font-bold hover:underline text-sm"
                     >
                       <span>Baca Tutorial Lengkap</span>
@@ -1146,7 +1186,7 @@ export default function App() {
                         <span className="bg-blue-50 text-blue-600 font-bold px-2.5 py-1 rounded-md">{art.category}</span>
                         <span>{art.date}</span>
                       </div>
-                      <h3 className="text-xl font-bold text-slate-900 mb-3">{art.title}</h3>
+                        <h3 data-testid={`article-title-${art.id}`} className="text-xl font-bold text-slate-900 mb-3 cursor-pointer hover:text-blue-600" onClick={() => openShareableContent("artikel", art)}>{art.title}</h3>
                       <p className="text-slate-600 text-sm mb-4 leading-relaxed">{art.content}</p>
                     </div>
                     <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500 font-medium">
@@ -1328,6 +1368,64 @@ export default function App() {
 
       </main>
 
+      {(selectedArticle || selectedTutorial) && (
+        <div className="fixed inset-0 z-[60] bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <article className="bg-white rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-y-auto p-8 sm:p-12 shadow-2xl border border-slate-200">
+            <div className="flex items-start justify-between gap-6 mb-8">
+              <div>
+                <span className="text-blue-600 font-bold uppercase text-xs">{(selectedArticle || selectedTutorial).category}</span>
+                <h2 data-testid="content-detail-title" className="text-3xl sm:text-4xl font-extrabold text-slate-900 mt-2">{(selectedArticle || selectedTutorial).title}</h2>
+              </div>
+              <button data-testid="close-content-detail" onClick={() => { setSelectedArticle(null); setSelectedTutorial(null); window.history.pushState({}, "", window.location.pathname); }} className="p-2 rounded-xl text-slate-500 hover:bg-slate-100 transition-colors" aria-label="Tutup detail">
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            <p data-testid="content-detail-body" className="text-slate-600 leading-relaxed text-lg">
+              {(selectedArticle || selectedTutorial).content || (selectedArticle || selectedTutorial).desc}
+            </p>
+            <div className="mt-8 pt-6 border-t border-slate-100 flex flex-wrap gap-3 items-center">
+              <span className="text-sm text-slate-500">Materi dari LABKOM OFFICIAL</span>
+              <button data-testid="share-content-button" onClick={async () => {
+                const shareUrl = window.location.href;
+                try {
+                  if (navigator.share) {
+                    await navigator.share({ title: (selectedArticle || selectedTutorial).title, url: shareUrl });
+                    return;
+                  }
+                  if (navigator.clipboard && navigator.clipboard.writeText) {
+                    await navigator.clipboard.writeText(shareUrl);
+                    toast.success("Tautan berhasil disalin");
+                    return;
+                  }
+                  throw new Error("no-clipboard");
+                } catch (err) {
+                  try {
+                    const ta = document.createElement("textarea");
+                    ta.value = shareUrl;
+                    ta.setAttribute("readonly", "");
+                    ta.style.position = "fixed";
+                    ta.style.opacity = "0";
+                    document.body.appendChild(ta);
+                    ta.select();
+                    const ok = document.execCommand && document.execCommand("copy");
+                    document.body.removeChild(ta);
+                    if (ok) {
+                      toast.success("Tautan berhasil disalin");
+                    } else {
+                      toast.info("Salin tautan manual: " + shareUrl);
+                    }
+                  } catch (e2) {
+                    toast.info("Salin tautan manual: " + shareUrl);
+                  }
+                }
+              }} className="ml-auto inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl text-sm font-bold transition-all">
+                <ExternalLink className="w-4 h-4" /> Bagikan Tautan
+              </button>
+            </div>
+          </article>
+        </div>
+      )}
+
       {/* MODAL PENDAFTARAN KURSUS */}
       {isRegisterModalOpen && (
         <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
@@ -1429,9 +1527,7 @@ export default function App() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
             <div>
               <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white">
-                  <Laptop className="w-5 h-5" />
-                </div>
+                <img src="/assets/labkom-logo.png" alt="LABKOM OFFICIAL" className="w-10 h-10 object-contain bg-white/5 rounded-xl p-1" />
                 <div>
                   <span className="font-extrabold text-lg text-white block leading-none">
                     LABKOM <span className="text-blue-500">OFFICIAL</span>
