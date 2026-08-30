@@ -4,6 +4,7 @@ import { ArrowLeft, Play, ImageIcon as ImgIcon, Video } from "lucide-react";
 import { Toaster } from "sonner";
 
 const backendUrl = process.env.REACT_APP_BACKEND_URL;
+const resolveUrl = (u) => (u && u.startsWith("/api/") ? `${backendUrl}${u}` : u);
 
 const getYouTubeId = (url) => {
   try {
@@ -25,6 +26,13 @@ export default function GalleryPage() {
 
   useEffect(() => {
     document.title = "Galeri Foto & Video Kursus | LABKOM OFFICIAL";
+    let m = document.querySelector('meta[name="description"]');
+    if (!m) {
+      m = document.createElement("meta");
+      m.setAttribute("name", "description");
+      document.head.appendChild(m);
+    }
+    m.setAttribute("content", "Dokumentasi foto dan video kegiatan kursus LABKOM OFFICIAL - workshop, sesi belajar, dan aktivitas alumni.");
     fetch(`${backendUrl}/api/gallery`)
       .then((r) => r.json())
       .then((data) => { setItems(data); setLoading(false); })
@@ -91,7 +99,7 @@ export default function GalleryPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {filtered.map((g) => {
               const ytId = g.type === "video" ? getYouTubeId(g.url) : null;
-              const thumb = g.type === "video" && ytId ? `https://img.youtube.com/vi/${ytId}/hqdefault.jpg` : g.url;
+              const thumb = g.type === "video" && ytId ? `https://img.youtube.com/vi/${ytId}/hqdefault.jpg` : resolveUrl(g.url);
               return (
                 <button
                   key={g.id}
@@ -139,7 +147,7 @@ export default function GalleryPage() {
                   allowFullScreen
                 />
               ) : (
-                <img src={selected.url} alt={selected.title} className="w-full h-full object-contain" />
+                <img src={resolveUrl(selected.url)} alt={selected.title} className="w-full h-full object-contain" />
               )}
             </div>
             <div className="p-6">

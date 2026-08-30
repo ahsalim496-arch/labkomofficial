@@ -3,42 +3,59 @@
 ## Original Problem Statement
 Website edukasi teknologi profesional Indonesia (www.labkomofficial.com) untuk belajar komputer, teknologi, dan keterampilan digital.
 
-## User Personas
-Pelajar, mahasiswa, guru, masyarakat umum, pemula. Ditambah: admin internal LABKOM untuk kelola konten & pantau pendaftaran.
-
 ## Implementation Log
-- Iteration 1 (MVP): Landing, navigasi, kursus, materi, artikel/tutorial, form, WhatsApp, responsif (DONE)
-- Iteration 2 (Fase Lanjutan): MongoDB registrations/contacts, 4 PDF materials, Resend email, artikel share modal (DONE)
-- Iteration 3 (Bugs + Logo): Share button clipboard fallback, email transparency, logo baru monitor merah (DONE)
-- Iteration 4 (Fitur Baru):
-  - Admin Dashboard `/admin?key=labkom-admin-2026-secret` dengan tabel pendaftaran + kontak + filter tanggal (DONE)
-  - Gallery CRUD admin (foto URL / video YouTube) + halaman publik `/galeri` (DONE)
-  - React Router: `/artikel/:slug`, `/tutorial/:slug` dengan meta title/description dinamis (DONE)
-  - Section Testimoni Alumni (6 fiktif) di halaman Kursus (DONE)
+- Iteration 1 (MVP): Landing + 8 tab navigasi + kursus + materi + WhatsApp (DONE)
+- Iteration 2 (Fase Lanjutan): MongoDB registrations/contacts + 4 PDF materials + Resend email + share (DONE)
+- Iteration 3: Fix share clipboard + email transparency + custom logo (DONE)
+- Iteration 4: Admin dashboard `/admin?key=` + article routing slugs + testimoni fiktif + galeri URL (DONE)
+- Iteration 5 (fase saat ini):
+  - **Upload foto sungguhan** via Emergent Object Storage: `/api/admin/gallery/upload` menerima file (JPG/PNG/WEBP/GIF, maks 8MB), simpan di `labkom-official/gallery/{uuid}.{ext}`, serve via `/api/files/{path}` (public read) (DONE)
+  - Admin form: toggle Upload vs URL Eksternal, `capture="environment"` untuk kamera HP, preview upload di grid (DONE)
+  - **Rating & Review Alumni Nyata**: Public form review dengan rating stars 1-5, submit ke `/api/reviews`. Testimonials fetch dari `/api/reviews?min_rating=5` (auto-tampilkan bintang 5 approved) dengan fallback ke 5 testimoni fiktif (DONE)
+  - Admin Reviews tab: approve/hide/delete ulasan (DONE)
+  - Meta description untuk `/galeri` (SEO gap fix) (DONE)
 
 ## Tech Stack
 - Frontend: React 19 + CRA + CRACO + TailwindCSS + Shadcn UI + Sonner + react-router-dom v7
-- Backend: FastAPI + Motor (async MongoDB)
+- Backend: FastAPI + Motor (async MongoDB) + Emergent Object Storage
 - Documents: ReportLab
-- Email: Resend SDK (testing mode - deliver ke account owner ahsalim496@gmail.com)
+- Email: Resend SDK (testing mode)
+- Storage: Emergent Object Storage via `integrations.emergentagent.com/objstore`
+
+## API Routes
+### Public
+- `POST /api/registrations` — daftar kursus (menyimpan + kirim email Resend)
+- `POST /api/contacts` — pesan kontak
+- `POST /api/reviews` — kirim ulasan alumni (approved default true)
+- `GET /api/reviews?min_rating=5` — public listing untuk halaman Kursus
+- `GET /api/gallery` — daftar galeri publik
+- `GET /api/files/{path}` — serve file dari Object Storage
+- `GET /api/materials/{id}/download` — 4 PDF materi
+
+### Admin (butuh `?key=` atau header `X-Admin-Key`)
+- `GET /api/admin/verify`, `/registrations`, `/contacts`, `/stats`, `/reviews`
+- `POST /api/admin/gallery` (URL) & `POST /api/admin/gallery/upload` (multipart file)
+- `DELETE /api/admin/gallery/{id}`, `/admin/reviews/{id}`
+- `PATCH /api/admin/reviews/{id}` — {approved: bool}
+
+## Environment Variables (backend/.env)
+- MONGO_URL, DB_NAME (dilindungi)
+- RESEND_API_KEY, SENDER_EMAIL, NOTIFY_RECIPIENT
+- ADMIN_KEY (default: labkom-admin-2026-secret)
+- EMERGENT_LLM_KEY (untuk Emergent Object Storage init)
+- INTEGRATION_PROXY_URL (auto-set oleh platform)
+
+## Frontend Routes
+- `/` - Landing dengan tabs
+- `/artikel/:slug`, `/tutorial/:slug` - Detail dengan meta title/description
+- `/galeri` - Public gallery
+- `/admin?key=xxx` - Admin dashboard (4 tab)
 
 ## Prioritized Backlog
-- P1: Fix Materi Download labels (PPTX/ZIP tidak match backend PDF)
-- P1: Verifikasi domain di Resend agar email bisa ke labkomlangitan25@gmail.com
-- P1: Split App.js monolitik (~1500+ lines) jadi komponen kecil
+- P1: Verifikasi domain di Resend agar email ke labkomlangitan25@gmail.com
+- P1: Materi Download labels realistic (tidak mengklaim PPTX/ZIP)
+- P1: Split App.js monolitik jadi komponen kecil
 - P2: Rate limiting + honeypot untuk endpoints public write
-- P2: Header-only admin key (X-Admin-Key), stop pass di query param
-- P2: Meta description untuk halaman /galeri (SEO gap kecil)
+- P2: Header-only admin key, avoid ?key= di query
 - P2: Move Resend send ke BackgroundTasks
-- P2: File upload real (Emergent Object Storage) untuk galeri (saat ini URL only)
-
-## Environment Variables
-- Backend: MONGO_URL, DB_NAME, RESEND_API_KEY, SENDER_EMAIL, NOTIFY_RECIPIENT, ADMIN_KEY, CORS_ORIGINS
-- Frontend: REACT_APP_BACKEND_URL
-
-## Routes
-- `/` - Landing page (tabs: home/tentang/materi/kursus/tutorial/artikel/download/kontak)
-- `/artikel/:slug` - Detail artikel dengan meta title/description dinamis
-- `/tutorial/:slug` - Detail tutorial
-- `/galeri` - Public gallery foto/video kursus
-- `/admin?key=xxx` - Admin dashboard (verifikasi key backend)
+- P2: Soft delete untuk gallery (Emergent Object Storage tidak punya delete API)

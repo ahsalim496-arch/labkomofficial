@@ -1,9 +1,9 @@
 from dotenv import load_dotenv
-from fastapi import APIRouter, Depends, FastAPI, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, FastAPI, File, HTTPException, Query, Request, Response, UploadFile
 from fastapi.responses import StreamingResponse
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, conint
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.units import cm
@@ -14,6 +14,7 @@ from io import BytesIO
 from typing import Literal, Optional
 import logging
 import os
+import requests
 import resend
 import uuid
 
@@ -27,6 +28,53 @@ api_router = APIRouter(prefix="/api")
 
 NOTIFY_RECIPIENT = os.environ.get("NOTIFY_RECIPIENT", "labkomlangitan25@gmail.com")
 ADMIN_KEY = os.environ.get("ADMIN_KEY", "")
+
+# ================= EMERGENT OBJECT STORAGE =================
+STORAGE_BASE = (os.environ.get("INTEGRATION_PROXY_URL") or "").strip() or "https://integrations.emergentagent.com"
+STORAGE_URL = STORAGE_BASE.rstrip("/") + "/objstore/api/v1/storage"
+EMERGENT_KEY = os.environ.get("EMERGENT_LLM_KEY")
+APP_NAME = "labkom-official"
+_storage_key = None
+MIME_TYPES = {
+    "jpg": "image/jpeg", "jpeg": "image/jpeg", "png": "image/png",
+    "gif": "image/gif", "webp": "image/webp",
+}
+MAX_UPLOAD_SIZE = 8 * 1024 * 1024  # 8MB
+
+
+def init_storage():
+    global _storage_key
+    if _storage_key:
+        return _storage_key
+    if not EMERGENT_KEY:
+        raise RuntimeError("EMERGENT_LLM_KEY missing")
+    resp = requests.post(f"{STORAGE_URL}/init", json={"emergent_key": EMERGENT_KEY}, timeout=30)
+    resp.raise_for_status()
+    _storage_key = resp.json()["storage_key"]
+    return _storage_key
+
+
+def put_object(path: str, data: bytes, content_type: str) -> dict:
+    key = init_storage()
+    resp = requests.put(
+        f"{STORAGE_URL}/objects/{path}",
+        headers={"X-Storage-Key": key, "Content-Type": content_type},
+        data=data,
+        timeout=120,
+    )
+    resp.raise_for_status()
+    return resp.json()
+
+
+def get_object(path: str) -> tuple[bytes, str]:
+    key = init_storage()
+    resp = requests.get(
+        f"{STORAGE_URL}/objects/{path}",
+        headers={"X-Storage-Key": key},
+        timeout=60,
+    )
+    resp.raise_for_status()
+    return resp.content, resp.headers.get("Content-Type", "application/octet-stream")
 
 
 def verify_admin(request: Request, key: Optional[str] = Query(default=None)):
@@ -70,6 +118,20 @@ class GalleryItemIn(BaseModel):
 class GalleryItem(GalleryItemIn):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class ReviewIn(BaseModel):
+    name: str = Field(min_length=2, max_length=80)
+    course_name: str = Field(min_length=2, max_length=120)
+    rating: int = Field(ge=1, le=5)
+    comment: str = Field(min_length=10, max_length=500)
+    role: str = ""
+
+
+class Review(ReviewIn):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    approved: bool = True
+    submitted_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 async def notify_registration(registration: Registration) -> tuple[bool, str | None]:
@@ -202,6 +264,98 @@ async def delete_gallery_item(item_id: str):
     return {"deleted": item_id}
 
 
+@api_router.post("/admin/gallery/upload", response_model=GalleryItem, dependencies=[Depends(verify_admin)])
+async def upload_gallery_photo(
+    file: UploadFile = File(...),
+    title: str = Query(..., min_length=2),
+    description: str = Query(""),
+    category: str = Query("Kegiatan Kursus"),
+):
+    if not file.filename:
+        raise HTTPException(status_code=400, detail="Nama file tidak valid")
+    ext = file.filename.rsplit(".", 1)[-1].lower() if "." in file.filename else "bin"
+    if ext not in MIME_TYPES:
+        raise HTTPException(status_code=400, detail="Format file tidak didukung. Gunakan JPG/PNG/WEBP/GIF")
+    data = await file.read()
+    if len(data) > MAX_UPLOAD_SIZE:
+        raise HTTPException(status_code=413, detail=f"Ukuran file melebihi {MAX_UPLOAD_SIZE // (1024*1024)}MB")
+    content_type = file.content_type or MIME_TYPES.get(ext, "application/octet-stream")
+    obj_path = f"{APP_NAME}/gallery/{uuid.uuid4()}.{ext}"
+    try:
+        result = await asyncio.to_thread(put_object, obj_path, data, content_type)
+    except Exception as exc:
+        logger.exception("Object storage upload failed")
+        raise HTTPException(status_code=502, detail=f"Gagal upload ke storage: {exc}")
+    public_url = f"/api/files/{result['path']}"
+    entry = GalleryItem(title=title, type="foto", url=public_url, description=description, category=category)
+    doc = entry.model_dump()
+    doc["created_at"] = entry.created_at.isoformat()
+    doc["storage_path"] = result["path"]
+    doc["original_filename"] = file.filename
+    doc["size"] = result.get("size", len(data))
+    await db.gallery.insert_one(doc)
+    return entry
+
+
+@api_router.get("/files/{path:path}")
+async def serve_file(path: str):
+    # Public read for gallery items already inserted in DB
+    doc = await db.gallery.find_one({"storage_path": path})
+    if not doc:
+        raise HTTPException(status_code=404, detail="File tidak ditemukan")
+    try:
+        data, ctype = await asyncio.to_thread(get_object, path)
+    except Exception as exc:
+        logger.exception("Object storage fetch failed")
+        raise HTTPException(status_code=502, detail="Gagal mengambil file")
+    ext = path.rsplit(".", 1)[-1].lower() if "." in path else ""
+    return Response(content=data, media_type=MIME_TYPES.get(ext, ctype))
+
+
+# ================= REVIEWS / TESTIMONI =================
+@api_router.post("/reviews", response_model=Review)
+async def create_review(review_in: ReviewIn):
+    review = Review(**review_in.model_dump())
+    doc = review.model_dump()
+    doc["submitted_at"] = review.submitted_at.isoformat()
+    await db.reviews.insert_one(doc)
+    return review
+
+
+@api_router.get("/reviews")
+async def list_reviews(min_rating: int = Query(default=5, ge=1, le=5), limit: int = Query(default=12, ge=1, le=100)):
+    query = {"rating": {"$gte": min_rating}, "approved": True}
+    docs = await db.reviews.find(query).sort("submitted_at", -1).to_list(length=limit)
+    return [_clean_doc(d) for d in docs]
+
+
+@api_router.get("/admin/reviews", dependencies=[Depends(verify_admin)])
+async def admin_list_reviews():
+    docs = await db.reviews.find({}).sort("submitted_at", -1).to_list(length=1000)
+    return [_clean_doc(d) for d in docs]
+
+
+@api_router.patch("/admin/reviews/{review_id}", dependencies=[Depends(verify_admin)])
+async def admin_update_review(review_id: str, payload: dict):
+    updates = {}
+    if "approved" in payload:
+        updates["approved"] = bool(payload["approved"])
+    if not updates:
+        raise HTTPException(status_code=400, detail="Tidak ada perubahan")
+    result = await db.reviews.update_one({"id": review_id}, {"$set": updates})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Ulasan tidak ditemukan")
+    return {"updated": review_id, **updates}
+
+
+@api_router.delete("/admin/reviews/{review_id}", dependencies=[Depends(verify_admin)])
+async def admin_delete_review(review_id: str):
+    result = await db.reviews.delete_one({"id": review_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Ulasan tidak ditemukan")
+    return {"deleted": review_id}
+
+
 MATERIALS = {
     1: ("Cheat Sheet Rumus Excel", ["VLOOKUP: =VLOOKUP(nilai, tabel, kolom, FALSE)", "XLOOKUP: =XLOOKUP(nilai, kolom_cari, kolom_hasil)", "Pivot Table: pilih data > Insert > PivotTable", "Gunakan IFERROR untuk hasil yang lebih rapi"]),
     2: ("Modul Dasar Pemrograman Python", ["Variabel menyimpan data: nama = 'LABKOM'", "Gunakan if/else untuk keputusan", "Gunakan for untuk perulangan", "Pecah program menjadi fungsi kecil yang mudah diuji"]),
@@ -229,6 +383,15 @@ async def download_material(material_id: int):
 
 app.include_router(api_router)
 app.add_middleware(CORSMiddleware, allow_credentials=True, allow_origins=os.environ.get("CORS_ORIGINS", "*").split(","), allow_methods=["*"], allow_headers=["*"])
+
+
+@app.on_event("startup")
+async def startup_event():
+    try:
+        await asyncio.to_thread(init_storage)
+        logger.info("Emergent Object Storage initialized")
+    except Exception as exc:
+        logger.warning("Storage init deferred: %s", exc)
 
 
 @app.on_event("shutdown")
