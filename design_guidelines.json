@@ -1,0 +1,223 @@
+{
+  "app_name": "LABKOM OFFICIAL",
+  "domain": "www.labkomofficial.com",
+  "tagline": "Belajar Komputer, Berkembang Bersama Teknologi",
+  "description": "Website pusat informasi dan pembelajaran tentang komputer, teknologi, dan keterampilan digital untuk pelajar, mahasiswa, guru, masyarakat umum, dan pemula.",
+  "contact": {
+    "whatsapp": "087741844019",
+    "email": "labkomlangitan25@gmail.com",
+    "address": "Jl. Teknologi Pendidikan No. 25, Labkom Tower, Indonesia"
+  },
+  "typography": {
+    "headings": "Outfit, sans-serif",
+    "body": "Inter, sans-serif",
+    "weights": {
+      "light": 300,
+      "regular": 400,
+      "medium": 500,
+      "semibold": 600,
+      "bold": 700,
+      "black": 900
+    }
+  },
+  "colors": {
+    "primary": "#0F172A",
+    "secondary": "#2563EB",
+    "accent": "#38BDF8",
+    "background": "#F8FAFC",
+    "card_bg": "#FFFFFF",
+    "text_dark": "#0F172A",
+    "text_muted": "#64748B",
+    "border": "#E2E8F0"
+  },
+  "image_urls": [
+    {
+      "category": "Hero & Background",
+      "url": "https://images.unsplash.com/photo-1743071441939-18ae26ddce3e?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1ODh8MHwxfHNlYXJjaHwyfHxtb2Rlcm4lMjB0ZWNoJTIwZWR1Y2F0aW9uJTIwY29kaW5nJTIwc3R1ZGVudHMlMjBsYXB0b3AlMjBsYWJvcmF0b3J5fGVufDB8fHx8MTc4ODA4Mjc1NXww&ixlib=rb-4.1.0&q=85",
+      "description": "Modern tech education students working on laptops"
+    },
+    {
+      "category": "Courses & Tutors",
+      "url": "https://images.unsplash.com/photo-1758685848208-e108b6af94cc?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1ODh8MHwxfHNlYXJjaHwxfHxtb2Rlcm4lMjB0ZWNoJTIwZWR1Y2F0aW9uJTIwY29kaW5nJTIwc3R1ZGVudHMlMjBsYXB0b3AlMjBsYWJvcmF0b3J5fGVufDB8fHx8MTc4ODA4Mjc1NXww&ixlib=rb-4.1.0&q=85",
+      "description": "Professional tech mentor conducting a lab session"
+    }
+  ],
+  "navigation_links": [
+    { "name": "Home", "path": "home" },
+    { "name": "Tentang Kami", "path": "tentang" },
+    { "name": "Belajar Komputer", "path": "materi" },
+    { "name": "Kursus", "path": "kursus" },
+    { "name": "Tutorial", "path": "tutorial" },
+    { "name": "Artikel", "path": "artikel" },
+    { "name": "Materi Download", "path": "download" },
+    { "name": "Kontak", "path": "kontak" }
+  ],
+  "learning_categories": [
+    "Pengenalan Komputer",
+    "Hardware & Software",
+    "Microsoft Word",
+    "Microsoft Excel",
+    "Microsoft PowerPoint",
+    "Internet",
+    "Coding & Programming",
+    "Data Analyst",
+    "Desain Grafis",
+    "AI & Teknologi",
+    "Jaringan Komputer",
+    "Keamanan Digital",
+    "Troubleshooting Komputer"
+  ],
+  "featured_courses": [
+    {
+      "id": 1,
+      "title": "Mastering Microsoft Office Professional (Word, Excel, PPT)",
+      "category": "Microsoft Excel",
+      "level": "Pemula",
+      "duration": "4 Minggu (16 Sesi)",
+      "price": "Rp 150.000",
+      "rating": 4.9,
+      "students": 1420,
+      "description": "Kuasai perkantoran modern dari dasar hingga mahir dengan formula Excel tingkat lanjut, laporan profesional Word, dan presentasi memukau."
+    },
+    {
+      "id": 2,
+      "title": "Fullstack Web Development & AI Integration",
+      "category": "Coding & Programming",
+      "level": "Menengah",
+      "duration": "8 Minggu (32 Sesi)",
+      "price": "Rp 350.000",
+      "rating": 5.0,
+      "students": 980,
+      "description": "Belajar membangun website modern menggunakan React, Tailwind CSS, Node.js, dan integrasi Artificial Intelligence API terkini."
+    },
+    {
+      "id": 3,
+      "title": "Data Analyst Fundamentals with Python & SQL",
+      "category": "Data Analyst",
+      "level": "Pemula",
+      "duration": "6 Minggu (24 Sesi)",
+      "price": "Rp 275.000",
+      "rating": 4.8,
+      "students": 850,
+      "description": "Ubah data mentah menjadi keputusan bisnis bernilai tinggi dengan Python Pandas, SQL Query, dan Tableau Visualization."
+    },
+    {
+      "id": 4,
+      "title": "Desain Grafis Profesional & UI/UX Design",
+      "category": "Desain Grafis",
+      "level": "Pemula",
+      "duration": "5 Minggu (20 Sesi)",
+      "price": "Rp 200.000",
+      "rating": 4.9,
+      "students": 1120,
+      "description": "Kuasai Photoshop, Illustrator, dan Figma untuk menciptakan materi pemasaran digital dan antarmuka aplikasi berstandar industri."
+    },
+    {
+      "id": 5,
+      "title": "Jaringan Komputer & Keamanan Siber Dasar",
+      "category": "Jaringan Komputer",
+      "level": "Menengah",
+      "duration": "6 Minggu (24 Sesi)",
+      "price": "Rp 300.000",
+      "rating": 4.7,
+      "students": 640,
+      "description": "Pelajari konfigurasi LAN/WAN, Mikrotik, router, serta teknik dasar pertahanan keamanan siber dari serangan siber."
+    },
+    {
+      "id": 6,
+      "title": "AI & Prompt Engineering untuk Produktivitas",
+      "category": "AI & Teknologi",
+      "level": "Pemula",
+      "duration": "3 Minggu (12 Sesi)",
+      "price": "Rp 175.000",
+      "rating": 5.0,
+      "students": 2100,
+      "description": "Manfaatkan ChatGPT, Claude, dan AI generative lainnya untuk mempercepat pekerjaan harian hingga 10x lipat."
+    }
+  ],
+  "articles": [
+    {
+      "id": 1,
+      "title": "10 Pintasan Excel Paling Penting untuk Pekerjaan Perkantoran 2026",
+      "category": "Microsoft Excel",
+      "date": "10 Juli 2026",
+      "author": "Tim Labkom Official",
+      "readTime": "5 menit baca",
+      "excerpt": "Tingkatkan produktivitas kerja Anda dengan menguasai shortcut Excel berikut yang jarang diketahui orang awam namun sangat ampuh."
+    },
+    {
+      "id": 2,
+      "title": "Mengenal Perbedaan Artificial Intelligence Generatif vs Agentic AI",
+      "category": "AI & Teknologi",
+      "date": "8 Juli 2026",
+      "author": "Ahmad Teknokrat, M.Kom",
+      "readTime": "7 menit baca",
+      "excerpt": "Teknologi AI terus berkembang pesat. Simak bagaimana AI agent mandiri mulai mengambil alih tugas-tugas kompleks secara otomatis."
+    },
+    {
+      "id": 3,
+      "title": "Panduan Merakit PC Gaming & Kerja Produktif Tanpa Bottleneck",
+      "category": "Hardware & Software",
+      "date": "5 Juli 2026",
+      "author": "Budi Hardware",
+      "readTime": "10 menit baca",
+      "excerpt": "Tips memilih CPU, GPU, RAM, dan NVMe SSD yang seimbang sesuai budget agar performa komputer maksimal untuk berbagai kebutuhan."
+    }
+  ],
+  "download_materials": [
+    {
+      "id": 1,
+      "title": "Cheat Sheet Lengkap Rumus Excel VLOOKUP, XLOOKUP & Pivot Table",
+      "category": "Microsoft Excel",
+      "fileType": "PDF",
+      "size": "2.4 MB",
+      "downloads": 4820
+    },
+    {
+      "id": 2,
+      "title": "Modul Panduan Dasar Pemrograman Python untuk Pemula",
+      "category": "Coding & Programming",
+      "fileType": "PDF / ZIP",
+      "size": "5.8 MB",
+      "downloads": 3150
+    },
+    {
+      "id": 3,
+      "title": "Template Presentasi Profesional (PowerPoint Editable)",
+      "category": "Microsoft PowerPoint",
+      "fileType": "PPTX",
+      "size": "14.2 MB",
+      "downloads": 6200
+    },
+    {
+      "id": 4,
+      "title": "Checklist Troubleshoot Komputer Lemot & Bluescreen",
+      "category": "Troubleshooting Komputer",
+      "fileType": "PDF",
+      "size": "1.8 MB",
+      "downloads": 2940
+    }
+  ],
+  "advantages": [
+    {
+      "icon": "Cpu",
+      "title": "Fasilitas & Lab Standar Industri",
+      "description": "Didukung perangkat komputer mutakhir, jaringan berkecepatan tinggi, dan lingkungan belajar digital yang nyaman."
+    },
+    {
+      "icon": "GraduationCap",
+      "title": "Kurikulum Berbasis Kompetensi",
+      "description": "Materi disusun sesuai dengan kebutuhan dunia kerja, industri digital, dan perkembangan teknologi global 2026."
+    },
+    {
+      "icon": "Users",
+      "title": "Instruktur Berpengalaman & Praktisi",
+      "description": "Dibimbing langsung oleh para pakar IT, praktisi industri, dan akademisi bersertifikasi nasional."
+    },
+    {
+      "icon": "Award",
+      "title": "Sertifikat Resmi & Portofolio",
+      "description": "Setiap peserta kursus yang lulus akan mendapatkan e-sertifikat resmi dan portofolio proyek nyata."
+    }
+  ]
+}
