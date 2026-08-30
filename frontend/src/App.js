@@ -252,7 +252,7 @@ export default function App() {
     if (notificationSent) {
       toast.success("Pendaftaran kursus berhasil dikirim! Tim Labkom Official akan segera menghubungi Anda via WhatsApp.");
     } else {
-      toast.success("Pendaftaran tersimpan. Tim Labkom Official akan menghubungi Anda via WhatsApp 087741844019.");
+      toast.success("Pendaftaran tersimpan. Tim Labkom Official akan menghubungi Anda via WhatsApp 082132976144.");
     }
     setIsRegisterModalOpen(false);
     setRegisterForm({ name: "", email: "", whatsapp: "", courseName: "", note: "" });
@@ -319,8 +319,8 @@ export default function App() {
             <span className="hidden md:inline">Pusat Pembelajaran Komputer & Teknologi Profesional</span>
           </div>
           <div className="flex items-center gap-4">
-            <a href="https://wa.me/6287741844019" target="_blank" rel="noreferrer" data-testid="topbar-whatsapp" className="flex items-center gap-1.5 hover:text-white transition-colors">
-              <FaWhatsapp className="text-green-400 text-sm" /> 0877-4184-4019
+            <a href="https://wa.me/6282132976144" target="_blank" rel="noreferrer" data-testid="topbar-whatsapp" className="flex items-center gap-1.5 hover:text-white transition-colors">
+              <FaWhatsapp className="text-green-400 text-sm" /> 0821-3297-6144
             </a>
             <span className="text-slate-500">|</span>
             <a href="mailto:labkomlangitan25@gmail.com" data-testid="topbar-email" className="flex items-center gap-1.5 hover:text-white transition-colors">
@@ -459,7 +459,7 @@ export default function App() {
 
       {/* FLOATING WHATSAPP BUTTON */}
       <a
-        href="https://wa.me/6287741844019?text=Halo%20Labkom%20Official,%20saya%20ingin%20bertanya%20mengenai%20kursus%20dan%20materi%20belajar."
+        href="https://wa.me/6282132976144?text=Halo%20Labkom%20Official,%20saya%20ingin%20bertanya%20mengenai%20kursus%20dan%20materi%20belajar."
         target="_blank"
         rel="noreferrer"
         data-testid="floating-whatsapp-btn"
@@ -771,7 +771,7 @@ export default function App() {
                     Daftar Kursus Sekarang
                   </button>
                   <a
-                    href="https://wa.me/6287741844019"
+                    href="https://wa.me/6282132976144"
                     target="_blank"
                     rel="noreferrer"
                     data-testid="cta-banner-whatsapp"
@@ -1020,7 +1020,7 @@ export default function App() {
                       </button>
 
                       <a
-                        href={`https://wa.me/6287741844019?text=Halo%20Labkom%20Official,%20saya%20tertarik%20mendaftar%20kursus%20${encodeURIComponent(selectedCourse.title)}`}
+                        href={`https://wa.me/6282132976144?text=Halo%20Labkom%20Official,%20saya%20tertarik%20mendaftar%20kursus%20${encodeURIComponent(selectedCourse.title)}`}
                         target="_blank"
                         rel="noreferrer"
                         data-testid="konsultasi-whatsapp-btn"
@@ -1231,8 +1231,8 @@ export default function App() {
                         </div>
                         <div>
                           <h4 className="font-bold text-slate-900">WhatsApp Resmi</h4>
-                          <a href="https://wa.me/6287741844019" target="_blank" rel="noreferrer" className="text-blue-600 font-semibold hover:underline">
-                            0877-4184-4019
+                          <a href="https://wa.me/6282132976144" target="_blank" rel="noreferrer" className="text-blue-600 font-semibold hover:underline">
+                            0821-3297-6144
                           </a>
                         </div>
                       </div>
@@ -1265,7 +1265,7 @@ export default function App() {
                     <h3 className="text-xl font-bold mb-3">Jam Operasional Layanan</h3>
                     <p className="text-blue-100 text-sm mb-4">Senin - Sabtu: 08.00 - 21.00 WIB<br />Minggu & Hari Libur: Sesi Khusus / Online</p>
                     <a
-                      href="https://wa.me/6287741844019"
+                      href="https://wa.me/6282132976144"
                       target="_blank"
                       rel="noreferrer"
                       className="inline-flex items-center gap-2 bg-white text-blue-600 px-6 py-3 rounded-xl font-bold text-sm shadow-md hover:bg-slate-100 transition-all"
@@ -1447,7 +1447,7 @@ export default function App() {
                 Pusat informasi dan pembelajaran komputer, teknologi, serta keterampilan digital terpercaya untuk pelajar, mahasiswa, dan masyarakat umum.
               </p>
               <div className="flex items-center gap-3">
-                <a href="https://wa.me/6287741844019" target="_blank" rel="noreferrer" className="w-10 h-10 rounded-xl bg-slate-800 hover:bg-green-600 hover:text-white flex items-center justify-center text-slate-300 transition-all">
+                <a href="https://wa.me/6282132976144" target="_blank" rel="noreferrer" className="w-10 h-10 rounded-xl bg-slate-800 hover:bg-green-600 hover:text-white flex items-center justify-center text-slate-300 transition-all">
                   <FaWhatsapp className="w-5 h-5" />
                 </a>
                 <a href="https://instagram.com" target="_blank" rel="noreferrer" className="w-10 h-10 rounded-xl bg-slate-800 hover:bg-pink-600 hover:text-white flex items-center justify-center text-slate-300 transition-all">
@@ -1500,7 +1500,7 @@ export default function App() {
               <ul className="space-y-4 text-sm">
                 <li className="flex items-start gap-3">
                   <Phone className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
-                  <span>WhatsApp: 0877-4184-4019</span>
+                  <span>WhatsApp: 0821-3297-6144</span>
                 </li>
                 <li className="flex items-start gap-3">
                   <Mail className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />

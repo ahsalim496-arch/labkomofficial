@@ -111,7 +111,7 @@ const ContentDetailLayout = ({ item, type }) => {
             <ExternalLink className="w-4 h-4" /> Bagikan Tautan
           </button>
           <a
-            href={`https://wa.me/6287741844019?text=${encodeURIComponent(`Baca ${type}: ${item.title} - ${window.location.href}`)}`}
+            href={`https://wa.me/6282132976144?text=${encodeURIComponent(`Baca ${type}: ${item.title} - ${window.location.href}`)}`}
             target="_blank"
             rel="noreferrer"
             className="inline-flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white px-5 py-2.5 rounded-xl text-sm font-bold transition-all"
